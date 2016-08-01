@@ -26,7 +26,13 @@ public class NotesAdapter extends RecyclerView.Adapter {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         View view = layoutInflater.inflate(R.layout.holder_note_item, parent, false);
 
-        return new NotesViewHolder(view);
+        return new NotesViewHolder(view, new Removeable() {
+            @Override
+            public void remove(int position) {
+                items.remove(position);
+                notifyItemRemoved(position);
+            }
+        });
     }
 
     @Override

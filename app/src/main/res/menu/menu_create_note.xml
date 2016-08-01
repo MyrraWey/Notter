@@ -1,0 +1,13 @@
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.muravyovdmitr.notter.activities.NotesActivity">
+
+    <item
+        android:id="@+id/menu_create_note_ok"
+        android:title="Ok"
+        android:icon="@drawable/ic_ok_white"
+        app:showAsAction="always"/>
+
+</menu>

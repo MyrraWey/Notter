@@ -1,5 +1,7 @@
 package com.muravyovdmitr.notter.recyclers;
 
+import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
@@ -17,16 +19,42 @@ class NotesViewHolder extends RecyclerView.ViewHolder implements Bindeable<Note>
     private TextView title;
     private TextView message;
 
-    NotesViewHolder(View itemView) {
+    private Removeable removeable;
+
+    NotesViewHolder(View itemView, Removeable removeable) {
         super(itemView);
+        itemView.setOnLongClickListener(this.longClickListener);
 
         this.title = (TextView) itemView.findViewById(R.id.holder_note_item_title);
         this.message = (TextView) itemView.findViewById(R.id.holder_note_item_message);
+
+        this.removeable = removeable;
     }
 
     @Override
     public void bind(Note item) {
         this.title.setText(item.getTitle());
         this.message.setText(item.getMessage());
+    }
+
+    private final View.OnLongClickListener longClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View view) {
+            removeItemDialog().show();
+            return false;
+        }
+    };
+
+    private AlertDialog.Builder removeItemDialog() {
+        return new AlertDialog.Builder(this.itemView.getContext())
+                .setTitle("Delete item #" + this.getAdapterPosition())
+                .setMessage("Are you sure?")
+                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        removeable.remove(getAdapterPosition());
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null);
     }
 }

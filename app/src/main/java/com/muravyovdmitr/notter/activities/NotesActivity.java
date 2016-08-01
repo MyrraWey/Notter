@@ -7,14 +7,14 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 
+import com.muravyovdmitr.notter.ParamAction;
 import com.muravyovdmitr.notter.models.Note;
 import com.muravyovdmitr.notter.notter.R;
 import com.muravyovdmitr.notter.recyclers.NotesAdapter;
 import com.muravyovdmitr.notter.recyclers.NotesDecoration;
+import com.muravyovdmitr.notter.utils.SnackBar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +25,8 @@ import roboguice.inject.InjectView;
 
 @ContentView(R.layout.activity_notes)
 public class NotesActivity extends RoboActionBarActivity {
+    private static final int CREATE_NOTE_ACTIVITY_REQUEST_CODE = 100;
+
     @InjectView(R.id.fab)
     FloatingActionButton floatingActionButton;
     @InjectView(R.id.toolbar)
@@ -34,12 +36,35 @@ public class NotesActivity extends RoboActionBarActivity {
     @InjectView(R.id.coordinator_layout)
     CoordinatorLayout coordinatorLayout;
 
+    private List<Note> notes;
     private RecyclerView.Adapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         init();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case CREATE_NOTE_ACTIVITY_REQUEST_CODE:
+                CreateNoteActivity.parseResult(
+                        new ParamAction<Note>() {
+                            @Override
+                            public void execute(Note param) {
+                                notes.add(param);
+                                adapter.notifyItemInserted(adapter.getItemCount() - 1);
+                            }
+                        },
+                        data
+                );
+                new SnackBar().showShortSnackBarMessage(this.coordinatorLayout, "Note created");
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+                break;
+        }
     }
 
     private void init() {
@@ -57,13 +82,14 @@ public class NotesActivity extends RoboActionBarActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(NotesActivity.this, CreateNoteActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, CREATE_NOTE_ACTIVITY_REQUEST_CODE);
             }
         });
     }
 
     private void prepareRecyclerView() {
-        this.adapter = new NotesAdapter(generateItems());
+        this.notes = generateItems();
+        this.adapter = new NotesAdapter(this.notes);
         this.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         this.recyclerView.setAdapter(this.adapter);
         this.recyclerView.setHasFixedSize(true);
@@ -80,22 +106,5 @@ public class NotesActivity extends RoboActionBarActivity {
         notes.add(new Note("Sixth note", "Why me !!!!!"));
 
         return notes;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_notes, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }
