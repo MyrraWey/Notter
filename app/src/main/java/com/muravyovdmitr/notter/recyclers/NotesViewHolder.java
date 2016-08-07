@@ -19,16 +19,16 @@ class NotesViewHolder extends RecyclerView.ViewHolder implements Bindeable<Note>
     private TextView title;
     private TextView message;
 
-    private Removeable removeable;
+    private Removable removable;
 
-    NotesViewHolder(View itemView, Removeable removeable) {
+    NotesViewHolder(View itemView, Removable removable) {
         super(itemView);
         itemView.setOnLongClickListener(this.longClickListener);
 
         this.title = (TextView) itemView.findViewById(R.id.holder_note_item_title);
         this.message = (TextView) itemView.findViewById(R.id.holder_note_item_message);
 
-        this.removeable = removeable;
+        this.removable = removable;
     }
 
     @Override
@@ -52,7 +52,7 @@ class NotesViewHolder extends RecyclerView.ViewHolder implements Bindeable<Note>
                 .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        removeable.remove(getAdapterPosition());
+                        removable.remove(getAdapterPosition());
                     }
                 })
                 .setNegativeButton(android.R.string.cancel, null);
