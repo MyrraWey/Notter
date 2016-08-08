@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
+import com.muravyovdmitr.notter.ParamAction;
 import com.muravyovdmitr.notter.models.Note;
 import com.muravyovdmitr.notter.notter.R;
 
@@ -20,15 +21,20 @@ class NotesViewHolder extends RecyclerView.ViewHolder implements Bindeable<Note>
     private TextView message;
 
     private Removable removable;
+    private ParamAction<Integer> onItemClick;
+    ;
 
-    NotesViewHolder(View itemView, Removable removable) {
+    NotesViewHolder(View itemView, Removable removable, ParamAction<Integer> onItemClick) {
         super(itemView);
-        itemView.setOnLongClickListener(this.longClickListener);
 
-        this.title = (TextView) itemView.findViewById(R.id.holder_note_item_title);
-        this.message = (TextView) itemView.findViewById(R.id.holder_note_item_message);
+        this.title = (TextView) itemView.findViewById(R.id.activity_note_item_title);
+        this.message = (TextView) itemView.findViewById(R.id.activity_note_item_message);
 
         this.removable = removable;
+        this.onItemClick = onItemClick;
+
+        itemView.setOnClickListener(this.clickListener);
+        itemView.setOnLongClickListener(this.longClickListener);
     }
 
     @Override
@@ -36,14 +42,6 @@ class NotesViewHolder extends RecyclerView.ViewHolder implements Bindeable<Note>
         this.title.setText(item.getTitle());
         this.message.setText(item.getMessage());
     }
-
-    private final View.OnLongClickListener longClickListener = new View.OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View view) {
-            removeItemDialog().show();
-            return false;
-        }
-    };
 
     private AlertDialog.Builder removeItemDialog() {
         return new AlertDialog.Builder(this.itemView.getContext())
@@ -57,4 +55,19 @@ class NotesViewHolder extends RecyclerView.ViewHolder implements Bindeable<Note>
                 })
                 .setNegativeButton(android.R.string.cancel, null);
     }
+
+    private final View.OnClickListener clickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            onItemClick.execute(getAdapterPosition());
+        }
+    };
+
+    private final View.OnLongClickListener longClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View view) {
+            removeItemDialog().show();
+            return false;
+        }
+    };
 }

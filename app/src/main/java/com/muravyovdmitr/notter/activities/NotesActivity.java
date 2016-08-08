@@ -1,5 +1,6 @@
 package com.muravyovdmitr.notter.activities;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
@@ -13,6 +14,7 @@ import com.muravyovdmitr.notter.ParamAction;
 import com.muravyovdmitr.notter.models.Note;
 import com.muravyovdmitr.notter.notter.R;
 import com.muravyovdmitr.notter.recyclers.NotesAdapter;
+import com.muravyovdmitr.notter.recyclers.NotesAdapterBuilder;
 import com.muravyovdmitr.notter.recyclers.NotesDecoration;
 import com.muravyovdmitr.notter.utils.SnackBar;
 
@@ -25,7 +27,8 @@ import roboguice.inject.InjectView;
 
 @ContentView(R.layout.activity_notes)
 public class NotesActivity extends RoboActionBarActivity {
-    private static final int CREATE_NOTE_ACTIVITY_REQUEST_CODE = 100;
+    private static final int CREATE_NOTE_ACTIVITY_REQUEST_CODE = Activity.RESULT_FIRST_USER + 1;
+    private static final int EDIT_NOTE_ACTIVITY_REQUEST_CODE = Activity.RESULT_FIRST_USER + 2;
 
     @InjectView(R.id.fab)
     FloatingActionButton floatingActionButton;
@@ -37,7 +40,7 @@ public class NotesActivity extends RoboActionBarActivity {
     CoordinatorLayout coordinatorLayout;
 
     private List<Note> notes;
-    private RecyclerView.Adapter adapter;
+    private NotesAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,17 +52,19 @@ public class NotesActivity extends RoboActionBarActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case CREATE_NOTE_ACTIVITY_REQUEST_CODE:
-                CreateNoteActivity.parseResult(
-                        new ParamAction<Note>() {
-                            @Override
-                            public void execute(Note param) {
-                                notes.add(param);
-                                adapter.notifyItemInserted(adapter.getItemCount() - 1);
-                            }
-                        },
-                        data
-                );
-                new SnackBar().showShortSnackBarMessage(this.coordinatorLayout, "Note created");
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        NoteActivity.parseResult(saveNote, data);
+                        new SnackBar().showShortSnackBarMessage(this.coordinatorLayout, "Note created");
+                        break;
+                }
+                break;
+            case EDIT_NOTE_ACTIVITY_REQUEST_CODE:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        NoteActivity.parseResult(saveEditedNote, data);
+                        break;
+                }
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
@@ -81,15 +86,18 @@ public class NotesActivity extends RoboActionBarActivity {
         this.floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(NotesActivity.this, CreateNoteActivity.class);
-                startActivityForResult(intent, CREATE_NOTE_ACTIVITY_REQUEST_CODE);
+                startCreateNoteActivity();
             }
         });
     }
 
+
     private void prepareRecyclerView() {
         this.notes = generateItems();
-        this.adapter = new NotesAdapter(this.notes);
+        this.adapter = new NotesAdapterBuilder()
+                .setNotes(this.notes)
+                .setOnItemClick(this.onItemClick)
+                .build();
         this.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         this.recyclerView.setAdapter(this.adapter);
         this.recyclerView.setHasFixedSize(true);
@@ -107,4 +115,42 @@ public class NotesActivity extends RoboActionBarActivity {
 
         return notes;
     }
+
+    private void startCreateNoteActivity() {
+        Intent intent = NoteActivity.createNoteIntent(NotesActivity.this);
+        startActivityForResult(intent, CREATE_NOTE_ACTIVITY_REQUEST_CODE);
+    }
+
+    private void startEditNoteActivity(int selectedItem) {
+        Intent intent = NoteActivity.editNoteIntent(NotesActivity.this, this.notes.get(selectedItem));
+        startActivityForResult(intent, EDIT_NOTE_ACTIVITY_REQUEST_CODE);
+    }
+
+    private final ParamAction<Note> saveNote = new ParamAction<Note>() {
+        @Override
+        public void execute(Note param) {
+            notes.add(param);
+            adapter.notifyItemInserted(adapter.getItemCount() - 1);
+        }
+    };
+
+    private final ParamAction<Note> saveEditedNote = new ParamAction<Note>() {
+        @Override
+        public void execute(Note param) {
+            int itemPosition = adapter.findItemPositionById(param.getId());
+            if (itemPosition >= 0) {
+                Note item = adapter.getItem(itemPosition);
+                item.setMessage(param.getMessage());
+                item.setTitle(param.getTitle());
+                adapter.notifyItemChanged(itemPosition);
+            }
+        }
+    };
+
+    private final ParamAction<Integer> onItemClick = new ParamAction<Integer>() {
+        @Override
+        public void execute(Integer param) {
+            startEditNoteActivity(param);
+        }
+    };
 }
